@@ -62,14 +62,14 @@ class TransitFiniteStates(FSMBehaviour):
     async def on_start(self):
         self.add_state(name=LOOKING_FOR_RIDE, state=LookForBus_StateBehavior(), initial=True)
         self.add_state(name=WAITING_FOR_RIDE, state=WaitingForBus_StateBehavior())
-        # self.add_state(name=RIDING, state=DistractedStateBehavior())
+        self.add_state(name=RIDING, state=RidingBus_StateBehavior())
         # self.add_state(name=GETTING_OFF, state=DistractedStateBehavior())
         self.add_state(name=FINISHED, state=Finished_StateBehavior())
         self.add_transition(source=LOOKING_FOR_RIDE, dest=LOOKING_FOR_RIDE)#
         self.add_transition(source=LOOKING_FOR_RIDE, dest=WAITING_FOR_RIDE)#
         self.add_transition(source=WAITING_FOR_RIDE, dest=WAITING_FOR_RIDE)
-        # self.add_transition(source=WAITING_FOR_RIDE, dest=RIDING)
-        # self.add_transition(source=RIDING, dest=RIDING)
+        self.add_transition(source=WAITING_FOR_RIDE, dest=RIDING)
+        self.add_transition(source=RIDING, dest=RIDING)
         # self.add_transition(source=RIDING, dest=GETTING_OFF)
         # self.add_transition(source=GETTING_OFF, dest=FINISHED)
         self.add_transition(source=FINISHED, dest=FINISHED)
@@ -90,6 +90,7 @@ class LookForBus_StateBehavior(State): #FIN
             searchTimeSoFar = int(time.time() - self.agent.timeOfStart)
             print(searchTimeSoFar)
             if(searchTimeSoFar > self.agent.timelimit):
+                #NOTIFY CENTRAL AGENT TO CANCEL??
                 self.set_next_state(FINISHED)
             else:
                 self.set_next_state(LOOKING_FOR_RIDE)
@@ -107,9 +108,32 @@ class WaitingForBus_StateBehavior(State):
 
             searchTimeSoFar = int(time.now() - self.agent.timeOfStart)
             if(searchTimeSoFar > self.agent.timelimit):
+                #NOTIFY CENTRAL AGENT TO CANCEL??
                 self.set_next_state(FINISHED)
 
-            self.set_next_state(LOOKING_FOR_RIDE)
+            self.set_next_state(WAITING_FOR_RIDE)
+            await asyncio.sleep(2)
+        except:
+            traceback.print_exc()
+
+class RidingBus_StateBehavior(State):
+    async def run(self):
+        try:
+            msg = await self.receive()
+            if msg:
+                if(msg.body=="--[REACHED_DESTINATION]--"):
+                    self.set_next_state(GETTING_OFF)
+                    return
+            self.set_next_state(RIDING)
+            await asyncio.sleep(2)
+        except:
+            traceback.print_exc()
+
+class GettingOff_StateBehavior(State):
+    async def run(self):
+        try:
+            ##Send message you've gotten off
+            self.set_next_state(FINISHED)
             await asyncio.sleep(2)
         except:
             traceback.print_exc()
@@ -117,8 +141,7 @@ class WaitingForBus_StateBehavior(State):
 class Finished_StateBehavior(State):
     async def run(self):
         try:
-            #NOTIFY CENTRALAGENT YOU'RE DONE
             print(Fore.CYAN + f"Passenger Agent {self.get('id')} : FINISHED MY JOURNEY     [jid: {str(self.agent.jid)}]" + Fore.RESET)
-            #shut down???
+            #shut down??? cleanup???
         except:
             traceback.print_exc()
