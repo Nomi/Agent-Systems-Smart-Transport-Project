@@ -39,6 +39,7 @@ class PassengerAgent(Agent):
     centralAgentAddress=""
     timeOfStart=time.time()
     timelimit=20#seconds
+    succesfullyCompleted=False
 
     async def setup(self):
         self.add_behaviour(TransitFiniteStates())
@@ -63,15 +64,15 @@ class TransitFiniteStates(FSMBehaviour):
         self.add_state(name=LOOKING_FOR_RIDE, state=LookForBus_StateBehavior(), initial=True)
         self.add_state(name=WAITING_FOR_RIDE, state=WaitingForBus_StateBehavior())
         self.add_state(name=RIDING, state=RidingBus_StateBehavior())
-        # self.add_state(name=GETTING_OFF, state=DistractedStateBehavior())
+        self.add_state(name=GETTING_OFF, state=DistractedStateBehavior())
         self.add_state(name=FINISHED, state=Finished_StateBehavior())
         self.add_transition(source=LOOKING_FOR_RIDE, dest=LOOKING_FOR_RIDE)#
         self.add_transition(source=LOOKING_FOR_RIDE, dest=WAITING_FOR_RIDE)#
         self.add_transition(source=WAITING_FOR_RIDE, dest=WAITING_FOR_RIDE)
         self.add_transition(source=WAITING_FOR_RIDE, dest=RIDING)
         self.add_transition(source=RIDING, dest=RIDING)
-        # self.add_transition(source=RIDING, dest=GETTING_OFF)
-        # self.add_transition(source=GETTING_OFF, dest=FINISHED)
+        self.add_transition(source=RIDING, dest=GETTING_OFF)
+        self.add_transition(source=GETTING_OFF, dest=FINISHED)
         self.add_transition(source=FINISHED, dest=FINISHED)
         self.add_transition(source=LOOKING_FOR_RIDE, dest=FINISHED)#
         self.add_transition(source=WAITING_FOR_RIDE, dest=FINISHED)#
@@ -132,6 +133,7 @@ class RidingBus_StateBehavior(State):
 class GettingOff_StateBehavior(State):
     async def run(self):
         try:
+            self.agent.succesfullyCompleted=True
             ##Send message you've gotten off
             self.set_next_state(FINISHED)
             await asyncio.sleep(2)
@@ -141,7 +143,10 @@ class GettingOff_StateBehavior(State):
 class Finished_StateBehavior(State):
     async def run(self):
         try:
-            print(Fore.CYAN + f"Passenger Agent {self.get('id')} : FINISHED MY JOURNEY     [jid: {str(self.agent.jid)}]" + Fore.RESET)
+            if(self.agent.succesfullyCompleted):
+                print(Fore.CYAN + f"Passenger Agent {self.get('id')} : FINISHED MY JOURNEY     [jid: {str(self.agent.jid)}]" + Fore.RESET)
+            else:
+                print(Fore.CYAN + f"Passenger Agent {self.get('id')} : FAILED TO TRAVEL     [jid: {str(self.agent.jid)}]" + Fore.RESET)
             #shut down??? cleanup???
         except:
             traceback.print_exc()

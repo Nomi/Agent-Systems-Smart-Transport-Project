@@ -20,9 +20,9 @@ from time import sleep
 from colorama import Back,Fore,Style,init
 
 ## Importing our code:
-import Agents.CentralAgent
-import Agents.BusAgent
-import Agents.PassengerAgent
+import Agents.Central
+import Agents.Bus
+from Agents.Passenger import PassengerAgent
 import Agents.AgentHelperFunctions
 
 
@@ -56,9 +56,9 @@ if __name__ == "__main__":
 
 
     ###### !!!!!OTHER SUBSECTIONS HERE!!!!! ######
-    agent = Agents.PassengerAgent.PassengerAgent("nomanspadehw@01337.io/69","lololol",False)
+    agent = PassengerAgent("nomanspadehw@01337.io/69","lololol",False)
     agent.set("id",1)
-    agent.add_behaviour(Agents.PassengerAgent.RequestBus())
+    agent.add_behaviour(PassengerAgent.RequestBus())
     agent.fillDetails("nomanspadehw@01337.io/99","","")
     future = agent.start()
     future.result()
