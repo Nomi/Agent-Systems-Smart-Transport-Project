@@ -64,7 +64,7 @@ class TransitFiniteStates(FSMBehaviour):
         self.add_state(name=LOOKING_FOR_RIDE, state=LookForBus_StateBehavior(), initial=True)
         self.add_state(name=WAITING_FOR_RIDE, state=WaitingForBus_StateBehavior())
         self.add_state(name=RIDING, state=RidingBus_StateBehavior())
-        self.add_state(name=GETTING_OFF, state=DistractedStateBehavior())
+        self.add_state(name=GETTING_OFF, state=GettingOff_StateBehavior())
         self.add_state(name=FINISHED, state=Finished_StateBehavior())
         self.add_transition(source=LOOKING_FOR_RIDE, dest=LOOKING_FOR_RIDE)#
         self.add_transition(source=LOOKING_FOR_RIDE, dest=WAITING_FOR_RIDE)#
@@ -79,6 +79,7 @@ class TransitFiniteStates(FSMBehaviour):
 
 class LookForBus_StateBehavior(State): #FIN
     async def run(self):
+        # self.agent.succesfullyCompleted=True #was just here for debug.
         print("DEBUG: looking for bus.")
         try:
             msg = await self.receive(timeout=10)
@@ -90,7 +91,7 @@ class LookForBus_StateBehavior(State): #FIN
             
             searchTimeSoFar = int(time.time() - self.agent.timeOfStart)
             print(searchTimeSoFar)
-            if(searchTimeSoFar > self.agent.timelimit):
+            if(searchTimeSoFar >= self.agent.timelimit):
                 #NOTIFY CENTRAL AGENT TO CANCEL??
                 self.set_next_state(FINISHED)
             else:
@@ -108,7 +109,7 @@ class WaitingForBus_StateBehavior(State):
                     self.set_next_state(RIDING)
 
             searchTimeSoFar = int(time.now() - self.agent.timeOfStart)
-            if(searchTimeSoFar > self.agent.timelimit):
+            if(searchTimeSoFar >= self.agent.timelimit):
                 #NOTIFY CENTRAL AGENT TO CANCEL??
                 self.set_next_state(FINISHED)
 

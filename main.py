@@ -22,7 +22,7 @@ from colorama import Back,Fore,Style,init
 ## Importing our code:
 import Agents.Central
 import Agents.Bus
-from Agents.Passenger import PassengerAgent
+from Agents.Passenger import PassengerAgent, RequestBus
 import Agents.AgentHelperFunctions
 
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     ###### !!!!!OTHER SUBSECTIONS HERE!!!!! ######
     agent = PassengerAgent("nomanspadehw@01337.io/69","lololol",False)
     agent.set("id",1)
-    agent.add_behaviour(PassengerAgent.RequestBus())
+    agent.add_behaviour(RequestBus())
     agent.fillDetails("nomanspadehw@01337.io/99","","")
     future = agent.start()
     future.result()
