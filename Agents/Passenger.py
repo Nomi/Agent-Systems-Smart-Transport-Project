@@ -1,4 +1,5 @@
-## General Imports
+### General Imports
+from asyncio import staggered
 import random
 import os
 import string
@@ -11,7 +12,7 @@ import traceback
 
 
 
-## Specific Imports
+### Specific Imports
 from spade import quit_spade
 from spade.agent import Agent
 from spade.behaviour import State, CyclicBehaviour, PeriodicBehaviour, FSMBehaviour, OneShotBehaviour
@@ -23,11 +24,11 @@ from colorama import Back,Fore,Style,init
 
 
 
-## Global Variables
+### Global Variables
 
-#States:
-LOOKING_FOR_RIDE = "LOOKING_FOR_RIDE"
-WAITING_FOR_RIDE = "WAITING_FOR_RIDE"
+## States:
+LOOKING_FOR_RIDE = "LOOKING_FOR_RIDE" #yellow node
+WAITING_FOR_RIDE = "WAITING_FOR_RIDE" #blue node
 RIDING = "RIDING"
 GETTING_OFF= "GETTING_OFF"
 FINISHED="FINISHED"
@@ -40,6 +41,7 @@ class PassengerAgent(Agent):
     timeOfStart=time.time()
     timelimit=20#seconds
     succesfullyCompleted=False
+    currentColor = ""
 
     async def setup(self):
         self.add_behaviour(TransitFiniteStates())
@@ -52,8 +54,13 @@ class PassengerAgent(Agent):
         self.location=location
         self.destination=destination
 
+    def getCurrentColor(self):
+        return self.currentColor
+
 
 class RequestBus(OneShotBehaviour):
+    async def on_start(self):
+        self.agent.currentColor = "yellow"
     async def run(self):
         #SEND MESSAGE TO ORGANIZER LOOKING FOR BUS
         print("Request bus not implemented.")
@@ -78,6 +85,9 @@ class TransitFiniteStates(FSMBehaviour):
         self.add_transition(source=WAITING_FOR_RIDE, dest=FINISHED)#
 
 class LookForBus_StateBehavior(State): #FIN
+    async def on_end(self):
+        self.agent.currentColor = "blue"
+        
     async def run(self):
         # self.agent.succesfullyCompleted=True #was just here for debug.
         print("DEBUG: looking for bus.")
