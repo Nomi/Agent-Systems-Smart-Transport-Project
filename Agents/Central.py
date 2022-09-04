@@ -19,10 +19,14 @@ from spade.message import Message
 from time import sleep
 from colorama import Back,Fore,Style,init
 
+##Importing our functions
+from helper import printArrMap
+
 
 
 ## Global Variables:
-
+ARRMAP_HEIGHT = 20 #try to have this be odd
+ARRMAP_WIDTH = 50
 
 ## Agent:
 class CentralAgent(Agent): #responsible for routing and graphing?
@@ -33,6 +37,7 @@ class CentralAgent(Agent): #responsible for routing and graphing?
     passengerIDs=[]
     busIDs=[]
     busPositions = {} #hashmap from XMPP IDs to busses' route index.
+    arrMap=[]
 
     # class MyBehav(CyclicBehaviour):
     #     async def on_start(self):
@@ -43,8 +48,17 @@ class CentralAgent(Agent): #responsible for routing and graphing?
     #         await asyncio.sleep(1)
 
     async def setup(self):
-        print(Fore.LIGHTRED_EX + f"Bus Agent {self.get('id')} : STARTING     [jid: {str(self.jid)}]" + Fore.RESET)
+        print(Fore.LIGHTYELLOW_EX + f"Central Agent {self.get('id')} : STARTING     [jid: {str(self.jid)}]" + Fore.RESET)
         self.timeOfStart=time.time()
+        self.arrMap=[]
+        for i in range(0,ARRMAP_HEIGHT):
+            self.arrMap.append([])
+            for j in range(0, ARRMAP_WIDTH):
+                if(i%2 != 0):
+                    self.arrMap[i][j] = ' '
+                else:
+                    self.arrMap[i][j] = '='
+        printArrMap(self.arrMap)
         return 0
         
     def fillDetails(self, _passengersXMPP: list, _bussesXMPP: list): #Actually, just make each of these message central agent "BUS:busname:starpost(always 0 ?)" for busses and for passengers "P:GETROUTE"/"P:startroute:endroute" for passengers???
