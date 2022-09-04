@@ -19,9 +19,11 @@ from spade.message import Message
 from time import sleep
 from colorama import Back,Fore,Style,init
 
-##Importing our functions
-from helper import printArrMap
+from Agents.AgentHelperFunctions import printArrMap
 
+##Importing our functions
+# from AgentHelperFunctions import printArrMap
+from helper import printArrMap
 
 
 ## Global Variables:
@@ -55,15 +57,21 @@ class CentralAgent(Agent): #responsible for routing and graphing?
             self.arrMap.append([])
             for j in range(0, ARRMAP_WIDTH):
                 if(i%2 != 0):
-                    self.arrMap[i][j] = ' '
+                    self.arrMap[i].append(' ')
                 else:
-                    self.arrMap[i][j] = '='
+                    self.arrMap[i].append('=')
         printArrMap(self.arrMap)
         return 0
         
     def fillDetails(self, _passengersXMPP: list, _bussesXMPP: list): #Actually, just make each of these message central agent "BUS:busname:starpost(always 0 ?)" for busses and for passengers "P:GETROUTE"/"P:startroute:endroute" for passengers???
         self.passengerIDs = _passengersXMPP
         self.busIDs = _bussesXMPP
+
+    # def printArrMap(arrMap:list):
+    #     for i in range(0,arrMap.__len__()):
+    #         for j in range(0,arrMap[i].__len__()):
+    #             print(arrMap[i][j], end='')
+    #         print()
     
 
 
