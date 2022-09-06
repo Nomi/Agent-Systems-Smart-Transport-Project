@@ -20,7 +20,7 @@ from time import sleep
 from colorama import Back,Fore,Style,init
 
 ## Importing our code:
-import Agents.Central
+from Agents.Central import CentralAgent
 import Agents.Bus
 from Agents.Passenger import PassengerAgent, RequestBus
 import Agents.AgentHelperFunctions
@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
 
     ###### CONFIGURATION ######
-    #code here
+    #code here (num passengers, num busses, etc.)
 
 
 
@@ -56,10 +56,16 @@ if __name__ == "__main__":
 
 
     ###### !!!!!OTHER SUBSECTIONS HERE!!!!! ######
+    centralAg = CentralAgent("nomanspadehw@01337.io/10","lololol",False)
+    centralAg.set("id",0)
+    centralAg.fillDetails([],[])
+    centralFuture = centralAg.start()
+    centralFuture.result()
+    
     agent = PassengerAgent("nomanspadehw@01337.io/69","lololol",False)
     agent.set("id",1)
     agent.add_behaviour(RequestBus())
-    agent.fillDetails("nomanspadehw@01337.io/99","","")
+    agent.fillDetails("nomanspadehw@01337.io/10",centralAg.getRandomPassengerLocation(),"")
     future = agent.start()
     future.result()
     while agent.is_alive:
@@ -68,8 +74,6 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             agent.stop()
             break
-
-
 
     ###### WINDING DOWN: ######
     print()
