@@ -1,6 +1,7 @@
 ##General Imports
 import random
 import os
+from re import X
 import sys
 import spade
 import time
@@ -19,22 +20,19 @@ from spade.message import Message
 from time import sleep
 from colorama import Back,Fore,Style,init
 
-from Agents.AgentHelperFunctions import printArrMap
-
 ##Importing our functions
-# from AgentHelperFunctions import printArrMap
-from helper import printArrMap
+from Agents.AgentHelperFunctions import printArrMap, buildArrMap, printArrMapWithBounds
 
 
 ## Global Variables:
-ARRMAP_HEIGHT = 20 #try to have this be odd
-ARRMAP_WIDTH = 50
+ARRMAP_HEIGHT = 7 #19 #try to have this be odd
+ARRMAP_WIDTH = 100
 
 ## Agent:
 class CentralAgent(Agent): #responsible for routing and graphing?
     # routes={}
     # routes['nomanspadehw@01337.io/69']=[1201,1021,2130]
-    routeIdxs = range(0,10,1)
+    # routeIdxs = range(0,10,1)
     timeOfStart=time.time()
     passengerIDs=[]
     busIDs=[]
@@ -48,31 +46,72 @@ class CentralAgent(Agent): #responsible for routing and graphing?
     #         print("Counter: {}".format(self.counter))
     #         self.counter += 1
     #         await asyncio.sleep(1)
+    class myBehavior(CyclicBehaviour):
+        async def  on_start(self) -> None:
+            print(Fore.LIGHTYELLOW_EX + f"Central Agent {self.get('id')} : READY" + Fore.RESET)
+            return await super().on_start()
+        async def run(self):
+            try:
+                msg = await self.receive()
+                if msg:
+                    print(Fore.LIGHTYELLOW_EX + f"Central Agent {self.get('id')} : RECIEVED MESSAGE" + Fore.RESET)
+
+                    body = msg.body.split(':')
+                    print(body)
+                    if(body[0]=='P'):
+                        self.agent.passengerIDs.append(msg._sender)
+                        print(self.agent.passengerIDs[self.agent.passengerIDs.__len__()-1])
+                        y = int(body[3])
+                        x = int(body[2])
+                        self.agent.arrMap[y][x] = 'P'
+                        # if(y>=0+2 and y<self.agent.arrMap.__len__()-2):
+                        #     if(self.agent.arrMap[y+1][x]):
+                        printArrMapWithBounds(self.agent.arrMap)
+                    elif(body[0]=='B'):
+                        print("Handling messages by bus not enabled yet.")
+                    else:
+                        print("Invalid message body.")
+                    reply = Message(to=msg._sender.__str__())
+                    reply.body = "--[ACCEPT]--"
+                    await self.send(reply)
+            except:
+                traceback.print_exc()
 
     async def setup(self):
         print(Fore.LIGHTYELLOW_EX + f"Central Agent {self.get('id')} : STARTING     [jid: {str(self.jid)}]" + Fore.RESET)
+
+        behav = self.myBehavior()
+        self.add_behaviour(behav)
+
         self.timeOfStart=time.time()
-        self.arrMap=[]
-        for i in range(0,ARRMAP_HEIGHT):
-            self.arrMap.append([])
-            for j in range(0, ARRMAP_WIDTH):
-                if(i%2 != 0):
-                    self.arrMap[i].append(' ')
-                else:
-                    self.arrMap[i].append('=')
-        printArrMap(self.arrMap)
+        self.arrMap=buildArrMap(ARRMAP_HEIGHT,ARRMAP_WIDTH)
+        random.seed(time.time_ns)
+        # for i in range(0,6,1):
+        #     pos = self.getRandomPassengerLocation(self.arrMap)
+        #     x=pos["x"]
+        #     y=pos["y"]
+        #     self.arrMap[y][x]="P"
+
+        printArrMapWithBounds(self.arrMap)
         return 0
         
     def fillDetails(self, _passengersXMPP: list, _bussesXMPP: list): #Actually, just make each of these message central agent "BUS:busname:starpost(always 0 ?)" for busses and for passengers "P:GETROUTE"/"P:startroute:endroute" for passengers???
         self.passengerIDs = _passengersXMPP
         self.busIDs = _bussesXMPP
 
-    # def printArrMap(arrMap:list):
-    #     for i in range(0,arrMap.__len__()):
-    #         for j in range(0,arrMap[i].__len__()):
-    #             print(arrMap[i][j], end='')
-    #         print()
-    
-
+    def getRandomPassengerLocation(self) -> dict:
+        positionNotFound = True
+        maxX = self.arrMap[0].__len__()-1
+        maxY = self.arrMap.__len__()-1
+        x=0
+        y=0
+        while(positionNotFound):
+            x = random.randint(0,maxX)
+            y = random.randint(0,maxY)
+            if(self.arrMap[y][x]=='='):
+                y=y+1
+            if(self.arrMap[y][x]==' '):
+                positionNotFound = False
+        return dict({"x":x, "y": y})
 
 

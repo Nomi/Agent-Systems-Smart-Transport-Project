@@ -1,9 +1,11 @@
 ### General Imports
 from asyncio import staggered
+from email import message
 import random
 import os
 import string
 import sys
+from xmlrpc.client import boolean
 import spade
 import time
 import datetime
@@ -20,6 +22,8 @@ from spade.message import Message
 
 from time import sleep
 from colorama import Back,Fore,Style,init
+
+from Agents.Central import CentralAgent
 # from Faker import faker()
 
 
@@ -36,12 +40,16 @@ FINISHED="FINISHED"
 
 class PassengerAgent(Agent):
     destination=""
-    location=""
+    # location=""
     centralAgentAddress=""
     timeOfStart=time.time()
     timelimit=20#seconds
     succesfullyCompleted=False
     currentColor = ""
+    position = dict({
+        "x": -1,
+        "y": -1
+    })
 
     async def setup(self):
         self.add_behaviour(TransitFiniteStates())
@@ -49,9 +57,9 @@ class PassengerAgent(Agent):
         self.timeOfStart=time.time()
         return 0
         
-    def fillDetails(self, CentralAgentXMPPID: string, location:string, destination:string):
+    def fillDetails(self, CentralAgentXMPPID: string, position:dict, destination:string):
         self.centralAgentAddress=CentralAgentXMPPID
-        self.location=location
+        self.position=position
         self.destination=destination
 
     def getCurrentColor(self):
@@ -62,6 +70,9 @@ class RequestBus(OneShotBehaviour):
     async def on_start(self):
         self.agent.currentColor = "yellow"
     async def run(self):
+        msg = Message(to=self.agent.centralAgentAddress)
+        msg.body="P:"+str(self.agent.timelimit)+":"+str(self.agent.position["x"])+":"+str(self.agent.position["y"])
+        await self.send(msg)
         #SEND MESSAGE TO ORGANIZER LOOKING FOR BUS
         print("Request bus not implemented.")
 
@@ -89,24 +100,28 @@ class LookForBus_StateBehavior(State): #FIN
         self.agent.currentColor = "blue"
         
     async def run(self):
+        notFoundBus = True
         # self.agent.succesfullyCompleted=True #was just here for debug.
         print("DEBUG: looking for bus.")
         try:
             msg = await self.receive(timeout=10)
             if msg:
                 if(msg.body=="--[ACCEPT]--"):
+                    print("debug passenger: ride found")
+                    notFoundBus=False
                     self.set_next_state(WAITING_FOR_RIDE)
                 elif(msg.body=="--[REJECT]--"):
                     self.set_next_state(FINISHED)
             
-            searchTimeSoFar = int(time.time() - self.agent.timeOfStart)
-            print(searchTimeSoFar)
-            if(searchTimeSoFar >= self.agent.timelimit):
-                #NOTIFY CENTRAL AGENT TO CANCEL??
-                self.set_next_state(FINISHED)
-            else:
-                self.set_next_state(LOOKING_FOR_RIDE)
-                await asyncio.sleep(2)
+            if(notFoundBus):
+                searchTimeSoFar = int(time.time() - self.agent.timeOfStart)
+                print(searchTimeSoFar)
+                if(searchTimeSoFar >= self.agent.timelimit):
+                    #NOTIFY CENTRAL AGENT TO CANCEL??
+                    self.set_next_state(FINISHED)
+                else:
+                    self.set_next_state(LOOKING_FOR_RIDE)
+                    await asyncio.sleep(2)
         except:
             traceback.print_exc()
 
@@ -118,7 +133,7 @@ class WaitingForBus_StateBehavior(State):
                 if(msg.body=="--[BUS_HERE]--"):
                     self.set_next_state(RIDING)
 
-            searchTimeSoFar = int(time.now() - self.agent.timeOfStart)
+            searchTimeSoFar = int(time.time() - self.agent.timeOfStart)
             if(searchTimeSoFar >= self.agent.timelimit):
                 #NOTIFY CENTRAL AGENT TO CANCEL??
                 self.set_next_state(FINISHED)
@@ -158,6 +173,8 @@ class Finished_StateBehavior(State):
                 print(Fore.CYAN + f"Passenger Agent {self.get('id')} : FINISHED MY JOURNEY     [jid: {str(self.agent.jid)}]" + Fore.RESET)
             else:
                 print(Fore.CYAN + f"Passenger Agent {self.get('id')} : FAILED TO TRAVEL     [jid: {str(self.agent.jid)}]" + Fore.RESET)
+                msg = Message(to=self.agent.centralAgentAddress)
+                msg.body='--[CANCEL]--'
             #shut down??? cleanup???
         except:
             traceback.print_exc()
