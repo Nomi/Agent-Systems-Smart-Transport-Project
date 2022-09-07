@@ -18,3 +18,11 @@ def getRandomPassengerLocation(arrMap:list) -> dict:
         if(arrMap[y][x]==' '):
             positionNotFound = False
     return dict({"x":x, "y": y})
+
+
+class coordinates:
+    x:int #width of 2d array
+    y:int #height of 2d array
+    def __init__(self, x:int, y:int):
+        self.x=x
+        self.y=y

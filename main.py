@@ -21,7 +21,7 @@ from colorama import Back,Fore,Style,init
 
 ## Importing our code:
 from Agents.Central import CentralAgent
-import Agents.Bus
+from Agents.Bus import BusAgent
 from Agents.Passenger import PassengerAgent, RequestBus
 import Agents.AgentHelperFunctions
 
@@ -64,10 +64,17 @@ if __name__ == "__main__":
     
     agent = PassengerAgent("nomanspadehw@01337.io/69","lololol",False)
     agent.set("id",1)
-    agent.add_behaviour(RequestBus())
+    agent.add_behaviour(RequestBus())#put this inside the bus class setup? like I did for central agent?
     agent.fillDetails("nomanspadehw@01337.io/10",centralAg.getRandomPassengerLocation(),"")
     future = agent.start()
     future.result()
+
+    busAg = BusAgent("nomanspadehw@01337.io/91","lololol",False)
+    busAg.set("id",2)
+    busAg.fillDetails("nomanspadehw@01337.io/10")
+    futureBus = busAg.start()
+    futureBus.result()
+
     while agent.is_alive:
         try:
             time.sleep(1)

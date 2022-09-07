@@ -49,7 +49,7 @@ class PassengerAgent(Agent):
     position = dict({
         "x": -1,
         "y": -1
-    })
+    }) # or rather just starting location?
 
     async def setup(self):
         self.add_behaviour(TransitFiniteStates())
