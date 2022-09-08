@@ -26,8 +26,7 @@ from helper import coordinates
 
 
 ## Global Variables:
-ARRMAP_HEIGHT = 7 #19 #try to have this be odd
-ARRMAP_WIDTH = 100
+from config import ARRMAP_HEIGHT, ARRMAP_WIDTH
 
 ## Agent:
 class CentralAgent(Agent): #responsible for routing and graphing?

@@ -31,8 +31,9 @@ init(convert=True, autoreset=True)
 
 
 
-
-
+## CONFIGURATION ##
+from config import NUM_PASSENGERS_TO_GENERATE, NUM_BUSSES_TO_GENERATE
+    #code here (num passengers, num busses, etc.)
 
 
 
@@ -42,12 +43,6 @@ if __name__ == "__main__":
     Starts the agents and runs the main logic.
     '''
     print(Back.LIGHTGREEN_EX+Fore.RED+'======== START ========'+Fore.RESET+Back.RESET)
-
-
-
-    ###### CONFIGURATION ######
-    #code here (num passengers, num busses, etc.)
-
 
 
     ###### BASIC SETUP ######

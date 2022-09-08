@@ -23,10 +23,11 @@ from spade.message import Message
 from time import sleep
 from colorama import Back,Fore,Style,init
 
-
+### Importing our code
+from helper import coordinates
 
 ### Global Variables
-MAXPASSENGERS = 2
+from config import MAX_PASSENGERS
 
 
 
@@ -41,7 +42,7 @@ class BusAgent(Agent):
     route=[]
     #finalStopIndex = -1 #use (route.__len__()-1) instead
     colorId=Fore.RED#change to be filled from fillDetails
-    currentStopIndex = -1
+    currentPos = coordinates(0,0)
     centralAgentAddress=""
     passengerCount=0
     timeOfStart=time.time()
@@ -108,13 +109,15 @@ class Moving_StateBehavior(State): #FIN
         # self.agent.succesfullyCompleted=True #was just here for debug.
         print(f"DEBUG: bus agent {str(self.agent.jid)} on the move.")
         try:
+            self.agent.currentPos.x = 1 + self.agent.currentPos.x #wait for another bus to move so that there's no overlap?
+            x = self.agent.currentPos.x
             msg = Message(to=self.agent.centralAgentAddress)
-            msg.body = "B::0:2:0+" #make this work with dynamically, for now I have it static for testing.
+            msg.body = f"B::{x}:2:0+" #make this work with dynamically, for now I have it static for testing.
             await self.send(msg)
             #move by one index (width/x wise)
             await asyncio.sleep(1) #we move one array index per second.
             #implement passenger pickup logic
-            # self.set_next_state(MOVING)
+            self.set_next_state(MOVING)
         except:
             traceback.print_exc()
 
