@@ -4,6 +4,7 @@ from queue import Full
 import random
 import os
 import sys
+from tkinter import LAST
 from unicodedata import numeric
 import spade
 import time
@@ -27,7 +28,7 @@ from colorama import Back,Fore,Style,init
 from helper import coordinates
 
 ### Global Variables
-from config import MAX_PASSENGERS
+from config import MAX_PASSENGERS, LAST_STOP
 
 
 
@@ -46,6 +47,7 @@ class BusAgent(Agent):
     centralAgentAddress=""
     passengerCount=0
     timeOfStart=time.time()
+    lastXPos = LAST_STOP
 
     async def setup(self):
         self.add_behaviour(TransitFiniteStates())
@@ -109,15 +111,20 @@ class Moving_StateBehavior(State): #FIN
         # self.agent.succesfullyCompleted=True #was just here for debug.
         print(f"DEBUG: bus agent {str(self.agent.jid)} on the move.")
         try:
-            self.agent.currentPos.x = 1 + self.agent.currentPos.x #wait for another bus to move so that there's no overlap?
-            x = self.agent.currentPos.x
-            msg = Message(to=self.agent.centralAgentAddress)
-            msg.body = f"B::{x}:2:0+" #make this work with dynamically, for now I have it static for testing.
-            await self.send(msg)
-            #move by one index (width/x wise)
-            await asyncio.sleep(1) #we move one array index per second.
-            #implement passenger pickup logic
-            self.set_next_state(MOVING)
+            if self.agent.currentPos.x != self.agent.lastXPos:
+                self.agent.currentPos.x = 1 + self.agent.currentPos.x #wait for another bus to move so that there's no overlap?
+                x = self.agent.currentPos.x
+                msg = Message(to=self.agent.centralAgentAddress)
+                msg.body = f"B::{x}:2:0+" #make this work with dynamically, for now I have it static for testing.
+                await self.send(msg)
+                #move by one index (width/x wise)
+                await asyncio.sleep(1) #we move one array index per second.
+                #implement passenger pickup logic
+                self.set_next_state(MOVING)
+                #implement accept or reject replies so that you can have the central agent check if there's any busses ahead of you currently?
+                #though tbh, we probably won't need that because every bus spawns at different locations and each of them have the same speed and no stops until the end
+            else:
+                print("not implemented yet.")
         except:
             traceback.print_exc()
 
