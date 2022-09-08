@@ -22,11 +22,11 @@ from colorama import Back,Fore,Style,init
 
 ##Importing our functions
 from Agents.AgentHelperFunctions import printArrMap, buildArrMap, printArrMapWithBounds
+from helper import coordinates
 
 
 ## Global Variables:
-ARRMAP_HEIGHT = 7 #19 #try to have this be odd
-ARRMAP_WIDTH = 100
+from config import ARRMAP_HEIGHT, ARRMAP_WIDTH
 
 ## Agent:
 class CentralAgent(Agent): #responsible for routing and graphing?
@@ -35,8 +35,7 @@ class CentralAgent(Agent): #responsible for routing and graphing?
     # routeIdxs = range(0,10,1)
     timeOfStart=time.time()
     passengerIDs=[]
-    busIDs=[]
-    busPositions = {} #hashmap from XMPP IDs to busses' route index.
+    busPositions = dict({}) #hashmap from XMPP IDs to busses' route index.
     arrMap=[]
 
     # class MyBehav(CyclicBehaviour):
@@ -61,19 +60,34 @@ class CentralAgent(Agent): #responsible for routing and graphing?
                     if(body[0]=='P'):
                         self.agent.passengerIDs.append(msg._sender)
                         print(self.agent.passengerIDs[self.agent.passengerIDs.__len__()-1])
-                        y = int(body[3])
-                        x = int(body[2])
-                        self.agent.arrMap[y][x] = 'P'
+                        w = int(body[3]) #x
+                        h = int(body[2]) #y
+                        self.agent.arrMap[w][h] = 'P'
                         # if(y>=0+2 and y<self.agent.arrMap.__len__()-2):
                         #     if(self.agent.arrMap[y+1][x]):
                         printArrMapWithBounds(self.agent.arrMap)
+                        #need to handle the finding nearest bus (that's on the adjacent route) and assigning the passenger to them,
+                        #also, if timelimit for pickup is lesser than time it will take to pick up someone, send --[REJECT]--
                     elif(body[0]=='B'):
                         print("Handling messages by bus not enabled yet.")
+                        #body[1] reserved for purpose (e.g. picked up, starting, picking up, moving, etc.) #moving also serves as registration
+                        nW = int(body[2]) #x
+                        nH = int(body[3]) #y
+                        newSymbol = str(body[4])
+                        if msg._sender not in self.agent.busPositions.keys():
+                            self.agent.busPositions[msg._sender] = coordinates(nW,nH)
+                        else:
+                            w = self.agent.busPositions[msg._sender].x
+                            h = self.agent.busPositions[msg._sender].y
+                            self.agent.arrMap[h][w] = ' ' #bus arrMap overlap logic also needs to be accounted for here.
+                            self.agent.busPositions[msg._sender].x = nW
+                            self.agent.busPositions[msg._sender].y = nH
+                        #bus arrMap overlap logic needs to be handled here:
+                        self.agent.arrMap[nH][nW] = newSymbol
+                        #reply with current map?
+                        printArrMapWithBounds(self.agent.arrMap)
                     else:
                         print("Invalid message body.")
-                    reply = Message(to=msg._sender.__str__())
-                    reply.body = "--[ACCEPT]--"
-                    await self.send(reply)
             except:
                 traceback.print_exc()
 
@@ -114,4 +128,18 @@ class CentralAgent(Agent): #responsible for routing and graphing?
                 positionNotFound = False
         return dict({"x":x, "y": y})
 
+    # def getRandomBusLocation(self) -> dict:
+    #     positionNotFound = True
+    #     maxX = self.arrMap[0].__len__()-1
+    #     maxY = self.arrMap.__len__()-1
+    #     x=0
+    #     y=0
+    #     while(positionNotFound):
+    #         x = random.randint(0,maxX)
+    #         y = random.randint(0,maxY)
+    #         if(self.arrMap[y][x]==' '):
+    #             y=y+1
+    #         if(self.arrMap[y][x]=='='):
+    #             positionNotFound = False
+    #     return dict({"x":x, "y": y})
 
