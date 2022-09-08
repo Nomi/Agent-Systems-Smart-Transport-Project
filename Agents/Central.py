@@ -79,7 +79,7 @@ class CentralAgent(Agent): #responsible for routing and graphing?
                         else:
                             w = self.agent.busPositions[msg._sender].x
                             h = self.agent.busPositions[msg._sender].y
-                            self.agent.arrMap[h][w] = ' ' #bus arrMap overlap logic also needs to be accounted for here.
+                            self.agent.arrMap[h][w] = '=' #bus arrMap overlap logic also needs to be accounted for here.
                             self.agent.busPositions[msg._sender].x = nW
                             self.agent.busPositions[msg._sender].y = nH
                         #bus arrMap overlap logic needs to be handled here:
@@ -142,4 +142,3 @@ class CentralAgent(Agent): #responsible for routing and graphing?
     #         if(self.arrMap[y][x]=='='):
     #             positionNotFound = False
     #     return dict({"x":x, "y": y})
-
