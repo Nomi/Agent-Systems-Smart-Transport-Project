@@ -88,45 +88,46 @@ class CentralAgent(Agent): #responsible for routing and graphing?
                         #also, if timelimit for pickup is lesser than time it will take to pick up someone, send --[REJECT]--
                     elif(body[0]=='B'):
                         #set self.agent.buss[assignedBus].busyPickingPassenger to False when current passenger is picked up
-                        moveRejectedStr = "NOT_REJECT_MOVE"
-                        passengerFoundStr = "NOT_FOUND_PASSENGER"
-                        pWX = -1
-                        pHY = -1
-                        passXmpp = ""
-                        print("Handling messages by bus not enabled yet.")
-                        #body[1] reserved for purpose (e.g. picked up, starting, picking up, moving, etc.) #moving also serves as registration
-                        nH = int(body[2]) #y
-                        nW = int(body[3]) #x
-                        newSymbol = str(body[4])
-                        if msg._sender not in self.agent.busses.keys():
-                            self.agent.busses[msg._sender] = busData(coordinates(nW,nH),int(body[5]),int(body[6]))
-                        else:
-                            w = self.agent.busses[msg._sender].pos.x
-                            h = self.agent.busses[msg._sender].pos.y
-                            self.agent.arrMap[h][w] = '=' #bus arrMap overlap logic also needs to be accounted for here.
-                            self.agent.busses[msg._sender].pos.x = nW
-                            self.agent.busses[msg._sender].pos.y = nH
-                        if(self.agent.arrMap[nH][nW] != '='): #avoids overlapping busses
-                            nW -= 1
-                            self.agent.busses[msg._sender].pos.x = nW #have busses spawn at least two to three spaces apart pls :'(
-                            moveRejectedStr = "REJECT_MOVE"
+                        if(body[1]=="MOVING"):
+                            moveRejectedStr = "NOT_REJECT_MOVE"
+                            passengerFoundStr = "NOT_FOUND_PASSENGER"
+                            pWX = -1
+                            pHY = -1
+                            passXmpp = ""
+                            print("Handling messages by bus not enabled yet.")
+                            #body[1] reserved for purpose (e.g. picked up, starting, picking up, moving, etc.) #moving also serves as registration
+                            nH = int(body[2]) #y
+                            nW = int(body[3]) #x
+                            newSymbol = str(body[4])
+                            if msg._sender not in self.agent.busses.keys():
+                                self.agent.busses[msg._sender] = busData(coordinates(nW,nH),int(body[5]),int(body[6]))
+                            else:
+                                w = self.agent.busses[msg._sender].pos.x
+                                h = self.agent.busses[msg._sender].pos.y
+                                self.agent.arrMap[h][w] = '=' #bus arrMap overlap logic also needs to be accounted for here.
+                                self.agent.busses[msg._sender].pos.x = nW
+                                self.agent.busses[msg._sender].pos.y = nH
+                            if(self.agent.arrMap[nH][nW] != '='): #avoids overlapping busses
+                                nW -= 1
+                                self.agent.busses[msg._sender].pos.x = nW #have busses spawn at least two to three spaces apart pls :'(
+                                moveRejectedStr = "REJECT_MOVE"
+                            currBus:busData = self.agent.busses[msg._sender]
+                            
+                            assignedPassJidXmpp:passengerData = self.agent.getCurrentAssignedPassenger(msg.sender)
+                            if(assignedPassJidXmpp != None):
+                                passengerFoundStr = "PASSENGER_FOUND"
+                                passXmpp = str(assignedPassJidXmpp)
+                                pasDat: passengerData = self.agent.passengers[assignedPassJidXmpp]
+                                pHY = pasDat.pos.y
+                                pWX = pasDat.pos.x
 
-                        assignedPassJidXmpp:passengerData = self.agent.getCurrentAssignedPassenger(msg.sender)
-                        if(assignedPassJidXmpp != None):
-                            passengerFoundStr = "PASSENGER_FOUND"
-                            passXmpp = str(assignedPassJidXmpp)
-                            pasDat: passengerData = self.agent.passengers[assignedPassJidXmpp]
-                            pHY = pasDat.pos.y
-                            pWX = pasDat.pos.x
+                            busReply = Message(to=str(msg.sender))
+                            busReply.body = "CEN"+":" + moveRejectedStr +":"+ passengerFoundStr  + ":"+ str(pHY) + ":" + str(pWX)+ ":" + passXmpp
+                            await self.send(busReply) #decided to await anyway # no need for await, clearly.
 
-                        busReply = Message(to=str(msg.sender))
-                        busReply.body = "CEN"+":" + moveRejectedStr +":"+ passengerFoundStr  + ":"+ str(pHY) + ":" + str(pWX)+ ":" + passXmpp
-                        await self.send(busReply) #decided to await anyway # no need for await, clearly.
-
-                        #height/y should be the same anyway.
-                        #bus arrMap overlap logic needs to be handled here:
-                        self.agent.arrMap[nH][nW] = newSymbol
-                        #reply with current map?
+                            #height/y should be the same anyway.
+                            #bus arrMap overlap logic needs to be handled here:
+                            self.agent.arrMap[nH][nW] = newSymbol #reply with current map?
                         printArrMapWithBounds(self.agent.arrMap)
                     else:
                         print("Invalid message body.")
