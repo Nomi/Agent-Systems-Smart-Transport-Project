@@ -11,14 +11,14 @@ NUM_BUSSES_TO_GENERATE = 4
 
 ''' Central.py '''
 ARRMAP_HEIGHT = 7 #19 #try to have this be odd
-ARRMAP_WIDTH = 100
+ARRMAP_WIDTH = 50 #5 #30 #100
 
 ''' Bus.py '''
 MAX_PASSENGERS = 2
 LAST_STOP = ARRMAP_WIDTH -1
 SYMBOL_FULLBUSS = ">"
 SYMBOL_NOTFULLBUSS = "+"
-TIME2SLEEP4 = 4 #number of seconds needed per 1 index movement.
+TIME2SLEEP4 = 3 #1 #number of seconds needed per 1 index movement.
 
 ''' Passenger.py '''
 
