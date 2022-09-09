@@ -4,6 +4,9 @@
 #####################################################
 #####################################################
 
+''' GENERAL '''
+JID_BASE="nomanspadehw@01337.io" #Jabber ID
+
 ''' main.py '''
 NUM_PASSENGERS_TO_GENERATE = 9
 NUM_BUSSES_TO_GENERATE = 4

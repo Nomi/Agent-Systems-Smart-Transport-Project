@@ -32,7 +32,7 @@ init(convert=True, autoreset=True)
 
 
 ## CONFIGURATION ##
-from config import NUM_PASSENGERS_TO_GENERATE, NUM_BUSSES_TO_GENERATE
+from config import NUM_PASSENGERS_TO_GENERATE, NUM_BUSSES_TO_GENERATE, JID_BASE
     #code here (num passengers, num busses, etc.)
 
 
@@ -51,22 +51,22 @@ if __name__ == "__main__":
 
 
     ###### !!!!!OTHER SUBSECTIONS HERE!!!!! ######
-    centralAg = CentralAgent("nomanspadehw@01337.io/10","lololol",False)
+    centralAg = CentralAgent(f"{JID_BASE}/10","lololol",False)
     centralAg.set("id",0)
     centralAg.fillDetails([],[])
     centralFuture = centralAg.start()
     centralFuture.result()
     
-    busAg = BusAgent("nomanspadehw@01337.io/91","lololol",False)
+    busAg = BusAgent(f"{JID_BASE}/91","lololol",False)
     busAg.set("id",2)
-    busAg.fillDetails("nomanspadehw@01337.io/10",2,0)
+    busAg.fillDetails(f"{JID_BASE}/10",2,0)
     futureBus = busAg.start()
     futureBus.result()
 
-    agent = PassengerAgent("nomanspadehw@01337.io/69","lololol",False)
+    agent = PassengerAgent(f"{JID_BASE}/69","lololol",False)
     agent.set("id",1)
     agent.add_behaviour(RequestBus())#put this inside the bus class setup? like I did for central agent?
-    agent.fillDetails("nomanspadehw@01337.io/10",centralAg.getRandomPassengerLocation(),"")
+    agent.fillDetails(f"{JID_BASE}/10",centralAg.getRandomPassengerLocation(),"")
     future = agent.start()
     future.result()
 
