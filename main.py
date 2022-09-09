@@ -57,6 +57,12 @@ if __name__ == "__main__":
     centralFuture = centralAg.start()
     centralFuture.result()
     
+    busAg = BusAgent("nomanspadehw@01337.io/91","lololol",False)
+    busAg.set("id",2)
+    busAg.fillDetails("nomanspadehw@01337.io/10",2,0)
+    futureBus = busAg.start()
+    futureBus.result()
+
     agent = PassengerAgent("nomanspadehw@01337.io/69","lololol",False)
     agent.set("id",1)
     agent.add_behaviour(RequestBus())#put this inside the bus class setup? like I did for central agent?
@@ -64,17 +70,12 @@ if __name__ == "__main__":
     future = agent.start()
     future.result()
 
-    busAg = BusAgent("nomanspadehw@01337.io/91","lololol",False)
-    busAg.set("id",2)
-    busAg.fillDetails("nomanspadehw@01337.io/10")
-    futureBus = busAg.start()
-    futureBus.result()
-
-    while agent.is_alive:
+    while centralAg.is_alive:
         try:
+            #can create more agents here.
             time.sleep(1)
         except KeyboardInterrupt:
-            agent.stop()
+            centralAg.stop()
             break
 
     ###### WINDING DOWN: ######

@@ -43,7 +43,7 @@ class PassengerAgent(Agent):
     # location=""
     centralAgentAddress=""
     timeOfStart=time.time()
-    timelimit=20#seconds
+    timelimit=1000000#20 #4 #seconds
     succesfullyCompleted=False
     currentColor = ""
     position = dict({
@@ -70,11 +70,10 @@ class RequestBus(OneShotBehaviour):
     async def on_start(self):
         self.agent.currentColor = "yellow"
     async def run(self):
-        msg = Message(to=self.agent.centralAgentAddress)
-        msg.body="P:"+str(self.agent.timelimit)+":"+str(self.agent.position["x"])+":"+str(self.agent.position["y"])
+        msg = Message(to=str(self.agent.centralAgentAddress))
+        msg.body="P:"+str(self.agent.timelimit)+":"+str(self.agent.position["y"])+":"+str(self.agent.position["x"])
         await self.send(msg)
         #SEND MESSAGE TO ORGANIZER LOOKING FOR BUS
-        print("Request bus not implemented.")
 
 
 class TransitFiniteStates(FSMBehaviour):
@@ -104,7 +103,7 @@ class LookForBus_StateBehavior(State): #FIN
         # self.agent.succesfullyCompleted=True #was just here for debug.
         print("DEBUG: looking for bus.")
         try:
-            msg = await self.receive(timeout=10)
+            msg = await self.receive(timeout=self.agent.timelimit)
             if msg:
                 if(msg.body=="--[ACCEPT]--"):
                     print("debug passenger: ride found")
@@ -112,16 +111,20 @@ class LookForBus_StateBehavior(State): #FIN
                     self.set_next_state(WAITING_FOR_RIDE)
                 elif(msg.body=="--[REJECT]--"):
                     self.set_next_state(FINISHED)
-            
-            if(notFoundBus):
+                else:
+                    print("Passenger looking for bus stage: invalid reply gotten.")
+            else:
                 searchTimeSoFar = int(time.time() - self.agent.timeOfStart)
                 print(searchTimeSoFar)
-                if(searchTimeSoFar >= self.agent.timelimit):
-                    #NOTIFY CENTRAL AGENT TO CANCEL??
-                    self.set_next_state(FINISHED)
-                else:
-                    self.set_next_state(LOOKING_FOR_RIDE)
-                    await asyncio.sleep(2)
+                if(notFoundBus):
+                    #the following if statement should be unneeded because of the timeout?
+                    if(searchTimeSoFar >= self.agent.timelimit):
+                        #NOTIFY CENTRAL AGENT TO CANCEL??
+                        self.set_next_state(FINISHED)
+                    else:
+                        self.set_next_state(LOOKING_FOR_RIDE)
+                        await asyncio.sleep(2)
+                    
         except:
             traceback.print_exc()
 

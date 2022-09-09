@@ -4,6 +4,8 @@ from queue import Full
 import random
 import os
 import sys
+from threading import Timer
+from timeit import timeit
 from tkinter import LAST
 from unicodedata import numeric
 import spade
@@ -28,7 +30,7 @@ from colorama import Back,Fore,Style,init
 from helper import coordinates
 
 ### Global Variables
-from config import MAX_PASSENGERS, LAST_STOP
+from config import MAX_PASSENGERS, LAST_STOP, SYMBOL_FULLBUSS, SYMBOL_NOTFULLBUSS, TIME2SLEEP4
 
 
 
@@ -46,6 +48,7 @@ class BusAgent(Agent):
     currentPos = coordinates(0,0)
     centralAgentAddress=""
     passengerCount=0
+    passengersToPick = dict({})
     timeOfStart=time.time()
     lastXPos = LAST_STOP
 
@@ -55,19 +58,20 @@ class BusAgent(Agent):
         self.timeOfStart=time.time()
         return 0
         
-    def fillDetails(self, CentralAgentXMPPID: string):
+    def fillDetails(self, CentralAgentXMPPID: string, hY:int, wX:int):
         self.centralAgentAddress=CentralAgentXMPPID
+        self.currentPos=coordinates(wX,hY)
         # self.currentStopIndex=0
 
 class TransitFiniteStates(FSMBehaviour):
     async def on_start(self):
         self.add_state(name=MOVING, state=Moving_StateBehavior(),initial=True)
-        # self.add_state(name=PICKING_UP_CLIENT, state=WaitingForBus_StateBehavior())
+        self.add_state(name=PICKING_UP_CLIENT, state=PickingUpCient_StateBehavior())
         # # self.add_state(name=DROPPING_OFF_CLIENT, state=RidingBus_StateBehavior())
         # self.add_state(name=FULL_BUSS, state=GettingOff_StateBehavior())
         # self.add_state(name=FINAL_STOP, state=GettingOff_StateBehavior())
         
-        # self.add_transition(source=MOVING, dest=PICKING_UP_CLIENT)
+
         # # self.add_transition(source=MOVING, dest=DROPPING_OFF_CLIENT)
         # self.add_transition(source=PICKING_UP_CLIENT, dest=MOVING)
         # self.add_transition(source=PICKING_UP_CLIENT, dest=FULL_BUSS)
@@ -77,7 +81,9 @@ class TransitFiniteStates(FSMBehaviour):
         # self.add_transition(source=FULL_BUSS, dest=FINAL_STOP)
 
         self.add_transition(source=MOVING, dest=MOVING)
-        # self.add_transition(source=PICKING_UP_CLIENT, dest=PICKING_UP_CLIENT)
+        self.add_transition(source=MOVING, dest=PICKING_UP_CLIENT)
+        self.add_transition(source=PICKING_UP_CLIENT, dest=PICKING_UP_CLIENT)
+        self.add_transition(source=PICKING_UP_CLIENT, dest=MOVING)
         # self.add_transition(source=DROPPING_OFF_CLIENT, dest=DROPPING_OFF_CLIENT)
         # self.add_transition(source=FULL_BUSS, dest=FULL_BUSS)
         # self.add_transition(source=FINAL_STOP, dest=FINAL_STOP)
@@ -108,19 +114,58 @@ class TransitFiniteStates(FSMBehaviour):
 
 class Moving_StateBehavior(State): #FIN
     async def run(self):
-        # self.agent.succesfullyCompleted=True #was just here for debug.
         print(f"DEBUG: bus agent {str(self.agent.jid)} on the move.")
         try:
+            stateChangeFromMoving:bool = False
+            #implement passenger pickup logic
             if self.agent.currentPos.x != self.agent.lastXPos:
+                # move by one index (width):
                 self.agent.currentPos.x = 1 + self.agent.currentPos.x #wait for another bus to move so that there's no overlap?
                 x = self.agent.currentPos.x
+                y = self.agent.currentPos.y
+                # send location info to Central agent
                 msg = Message(to=self.agent.centralAgentAddress)
-                msg.body = f"B::{x}:2:0+" #make this work with dynamically, for now I have it static for testing.
+                pasCountWithSymbol = f"{self.agent.passengerCount}"
+                if self.agent.passengerCount == MAX_PASSENGERS:
+                    pasCountWithSymbol += SYMBOL_FULLBUSS
+                else:
+                    pasCountWithSymbol += SYMBOL_NOTFULLBUSS
+                msg.body = f"B:MOVING:{y}:{x}:{pasCountWithSymbol}:{self.agent.passengerCount}:{MAX_PASSENGERS}" #make this work with dynamically, for now I have it static for testing.
                 await self.send(msg)
-                #move by one index (width/x wise)
-                await asyncio.sleep(1) #we move one array index per second.
-                #implement passenger pickup logic
-                self.set_next_state(MOVING)
+
+                # Get message from Central agent (and wait for 1 second to maintain speed of 1 index per second)
+                timeBeforeWaitNS = time.time_ns()
+                reply = await self.receive(timeout=TIME2SLEEP4)
+                if reply:
+                    body = reply.body.split(':')
+                    print(Fore.RED + "DEBUG: Bus recieved reply with body:")
+                    print(body)
+                    print(Fore.RESET)
+                    if body[1] == "REJECT_MOVE":
+                        self.agent.currentPos.x -= 1
+                    #else movement accepted.
+                    if body[2] == "PASSENGER_FOUND":
+                        py=int(body[3])
+                        px=int(body[4])
+                        passXmpp = str(body[5])
+                        self.agent.passengersToPick[passXmpp] = coordinates(px, py)
+                print(Fore.RED+ "BUS DEBUG: " + Fore.RESET)
+                print(self.agent.passengersToPick.keys())
+                #check if passengers are needed to be picked at the current stop. #change to pick only one passenger at a time to commit to a promised timelimit?
+                for key in self.agent.passengersToPick.keys():
+                    #don't need to check y coordinate here, do I?
+                    if((self.agent.passengersToPick[key].y-1 == self.agent.currentPos.y) or (self.agent.passengersToPick[key].y-1 == self.agent.currentPos.y)):
+                        print(Fore.RED+ "BUS DEBUG: HERE!!! " + Fore.RESET)
+                        if(self.agent.passengersToPick[key].x == self.agent.currentPos.x):
+                            print(Fore.RED+ "BUS DEBUG: !here! " + Fore.RESET)
+                            stateChangeFromMoving = True
+                            self.set_next_state(PICKING_UP_CLIENT)
+
+                if(not stateChangeFromMoving):
+                    self.set_next_state(MOVING) 
+                    timeRemainingSeconds = TIME2SLEEP4 - (time.time_ns() - timeBeforeWaitNS)/1000000000
+                    if timeRemainingSeconds > 0:
+                        await asyncio.sleep(timeRemainingSeconds) #we move one array index per second. #replace with recieve message with timeout of 1 sec and after this, sleep for the part of 1 sec that wasn't waited for.
                 #implement accept or reject replies so that you can have the central agent check if there's any busses ahead of you currently?
                 #though tbh, we probably won't need that because every bus spawns at different locations and each of them have the same speed and no stops until the end
             else:
@@ -128,23 +173,15 @@ class Moving_StateBehavior(State): #FIN
         except:
             traceback.print_exc()
 
-# class WaitingForBus_StateBehavior(State):
-#     async def run(self):
-#         try:
-#             msg = await self.receive()
-#             if msg:
-#                 if(msg.body=="--[BUS_HERE]--"):
-#                     self.set_next_state(RIDING)
-
-#             searchTimeSoFar = int(time.now() - self.agent.timeOfStart)
-#             if(searchTimeSoFar >= self.agent.timelimit):
-#                 #NOTIFY CENTRAL AGENT TO CANCEL??
-#                 self.set_next_state(FINISHED)
-
-#             self.set_next_state(WAITING_FOR_RIDE)
-#             await asyncio.sleep(2)
-#         except:
-#             traceback.print_exc()
+class PickingUpCient_StateBehavior(State):
+    async def run(self):
+        try:
+            print(Fore.RED+ "BUS: Picking up client not implemented" + Fore.RESET)
+            #TODO: Message client that he is picked up (find out by checking which positions overlap, if none, go back to moving.) (only need to check x coordinate here)
+            #TODO: Message the central agent the passenger with given id was picked up
+            #TODO: go back to moving state.
+        except:
+            traceback.print_exc()
 
 # class RidingBus_StateBehavior(State):
 #     async def run(self):

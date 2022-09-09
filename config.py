@@ -16,6 +16,9 @@ ARRMAP_WIDTH = 100
 ''' Bus.py '''
 MAX_PASSENGERS = 2
 LAST_STOP = ARRMAP_WIDTH -1
+SYMBOL_FULLBUSS = ">"
+SYMBOL_NOTFULLBUSS = "+"
+TIME2SLEEP4 = 4 #number of seconds needed per 1 index movement.
 
 ''' Passenger.py '''
 

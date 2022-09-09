@@ -2,6 +2,7 @@
 import random
 import os
 import sys
+from typing import Any
 import spade
 import time
 import datetime
@@ -19,6 +20,28 @@ from spade.message import Message
 from time import sleep
 from colorama import Back,Fore,Style,init
 
+from helper import coordinates
+
+
+## Helper classes:
+
+class passengerData:
+    pos: coordinates
+    assignedBusXmpp: Any
+    def __init__(self, position: coordinates, assignedBusXmpp):
+        self.assignedBusXmpp = assignedBusXmpp
+        self.pos = position
+
+class busData:
+    pos: coordinates
+    passengerCount: int
+    maxPassengers: int
+    busyPickingPassenger: bool
+    def __init__(self, position: coordinates, currPassengerCount:int, maxPassengers:int, busyPickingPassenger:bool = False):
+        self.pos = position
+        self.passengerCount=currPassengerCount
+        self.maxPassengers = maxPassengers
+        self.busyPickingPassenger = False
 
 
 
@@ -68,3 +91,5 @@ def buildArrMap(height:int, width:int) -> list:
             else:
                 arrMap[i].append('=')
     return arrMap
+
+
