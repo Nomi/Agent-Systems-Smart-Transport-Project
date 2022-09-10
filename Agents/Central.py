@@ -224,6 +224,7 @@ class CentralAgent(Agent): #responsible for routing and graphing?
                     y=y-1
             if(self.arrMap[y][x]==' ' and (self.arrMap[y-1][x]=='=' or self.arrMap[y+1][x]=='=')):
                 positionNotFound = False
+                self.arrMap[y][x] = 'R' #Reserved for passenger.
         return dict({"x":x, "y": y})
 
     def assginBusToPassenger(self, hY:int, wX:int, timeLimit:int) -> Any:
