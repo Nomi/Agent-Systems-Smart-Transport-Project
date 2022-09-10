@@ -1,4 +1,5 @@
 ## General Imports
+from ast import Pass
 import random
 import os
 import sys
@@ -32,7 +33,7 @@ init(convert=True, autoreset=True)
 
 
 ## CONFIGURATION ##
-from config import NUM_PASSENGERS_TO_GENERATE, NUM_BUSSES_TO_GENERATE, JID_BASE
+from config import NUM_PASSENGERS_TO_GENERATE, NUM_BUSSES_TO_GENERATE, JID_BASE, JID_PASSWORD
     #code here (num passengers, num busses, etc.)
 
 
@@ -46,33 +47,75 @@ if __name__ == "__main__":
 
 
     ###### BASIC SETUP ######
-    #code here
+    agentId = 0
+    centralAgentJidAlias = 10
+    busJidAlias = 1000 #range start
+    passJidAlias = 2000 #range start
 
 
 
-    ###### !!!!!OTHER SUBSECTIONS HERE!!!!! ######
-    centralAg = CentralAgent(f"{JID_BASE}/10","lololol",False)
-    centralAg.set("id",0)
+
+    ###### Central Agent setup and start ######
+    centralAg = CentralAgent(f"{JID_BASE}/{centralAgentJidAlias}",JID_PASSWORD,False)
+    centralAg.set("id",agentId)
     # centralAg.fillDetails([],[])
     centralFuture = centralAg.start()
     centralFuture.result()
     
-    busAg = BusAgent(f"{JID_BASE}/91","lololol",False)
-    busAg.set("id",2)
-    busAg.fillDetails(f"{JID_BASE}/10",2,0)
-    futureBus = busAg.start()
-    futureBus.result()
+    ###### Spawning busses ######
+    for i in range(0,NUM_BUSSES_TO_GENERATE):
+        agentId+=1
+        busAg = BusAgent(f"{JID_BASE}/{busJidAlias}",JID_PASSWORD,False)
+        busAg.set("id",agentId)
+        busAg.fillDetails(f"{JID_BASE}/{centralAgentJidAlias}",2+i*3,0)
+        futureBus=busAg.start()
+        futureBus.result()
+        busJidAlias+=1
+    # busAg = BusAgent(f"{JID_BASE}/91","lololol",False)
+    # busAg.set("id",2)
+    # busAg.fillDetails(f"{JID_BASE}/10",2,0)
+    # futureBus = busAg.start()
+    # futureBus.result()
 
-    agent = PassengerAgent(f"{JID_BASE}/69","lololol",False)
-    agent.set("id",1)
-    agent.add_behaviour(RequestBus())#put this inside the bus class setup? like I did for central agent?
-    agent.fillDetails(f"{JID_BASE}/10",centralAg.getRandomPassengerLocation(),"")
-    future = agent.start()
-    future.result()
+    passengersWaitingToSpawnListButWithoutDetails:list = []
+    ###### Preparing Passenger Agents ######
+    for i in range(0,NUM_PASSENGERS_TO_GENERATE):
+        agentId+=1
+        agent:PassengerAgent = PassengerAgent(f"{JID_BASE}/{passJidAlias}",JID_PASSWORD,False)
+        agent.set("id",agentId)
+        agent.add_behaviour(RequestBus())#put this inside the bus class setup? like I did for central agent?
+        passengersWaitingToSpawnListButWithoutDetails.append(agent)
+        passJidAlias+=1
+    # agent = PassengerAgent(f"{JID_BASE}/69","lololol",False)
+    # agent.set("id",1)
+    # agent.add_behaviour(RequestBus())#put this inside the bus class setup? like I did for central agent?
+    # agent.fillDetails(f"{JID_BASE}/{centralAgentJidAlias}",centralAg.getRandomPassengerLocation(),"")
+    # future = agent.start()
+    # future.result()
+    
+    ## For testing:
+    # agent = PassengerAgent(f"{JID_BASE}/69","lololol",False)
+    # agent.set("id",1)
+    # agent.add_behaviour(RequestBus())#put this inside the bus class setup? like I did for central agent?
+    # agent.fillDetails(f"{JID_BASE}/{centralAgentJidAlias}",centralAg.getRandomPassengerLocation(),"",True)
+    # future = agent.start()
+    # future.result()
 
+    random.seed(time.time_ns())
+    numPassSpawned = 0
     while centralAg.is_alive:
         try:
-            #can create more agents here.
+            #Spawning passenger agents:
+            if numPassSpawned < NUM_PASSENGERS_TO_GENERATE:
+                numPassAgentsToGenThisTurn = random.randint(0,3)
+                if(numPassAgentsToGenThisTurn>0):
+                    for i in range(0,numPassAgentsToGenThisTurn):
+                        passengersWaitingToSpawnListButWithoutDetails[numPassSpawned].fillDetails(f"{JID_BASE}/{centralAgentJidAlias}",centralAg.getRandomPassengerLocation(),"")
+                        future = passengersWaitingToSpawnListButWithoutDetails[numPassSpawned].start()
+                        future.result() 
+                        numPassSpawned+=1
+                        if(numPassSpawned==NUM_PASSENGERS_TO_GENERATE):
+                            break
             time.sleep(1)
         except KeyboardInterrupt:
             centralAg.stop()

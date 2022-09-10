@@ -28,7 +28,7 @@ from helper import coordinates
 
 
 ## Global Variables:
-from config import ARRMAP_HEIGHT, ARRMAP_WIDTH
+from config import ARRMAP_HEIGHT, ARRMAP_WIDTH, ENABLE_PASSENGER_SPACE_RESERVATION
 
 ## Central Agent class:
 class CentralAgent(Agent): #responsible for routing and graphing?
@@ -74,6 +74,7 @@ class CentralAgent(Agent): #responsible for routing and graphing?
                             await self.send(reply)
                             printArrMapWithBounds(self.agent.arrMap)
                         elif(body[1]=='GOT_ON_BUS'):
+                            self.agent.passengers[msg.sender].gotOnBus = True
                             currPassenger:passengerData = self.agent.passengers[msg.sender]
                             self.agent.busses[currPassenger.assignedBusXmpp].busyPickingPassenger=False
                             self.agent.arrMap[currPassenger.pos.y][currPassenger.pos.x] = ' '
@@ -112,18 +113,24 @@ class CentralAgent(Agent): #responsible for routing and graphing?
                             
                             # if(self.agent.busses[msg._sender].busyPickingPassenger == False): #accept only one passenger at a time to honor timelimits (and make things easier for myself :'))
                             assignedPassJidXmpp:passengerData = self.agent.getCurrentAssignedPassenger(msg.sender)
+                            # print(msg.sender)
                             if(assignedPassJidXmpp != None):
+                                # print(assignedPassJidXmpp)
                                 passengerFoundStr = "PASSENGER_FOUND"
                                 passXmpp = str(assignedPassJidXmpp)
                                 pasDat: passengerData = self.agent.passengers[assignedPassJidXmpp]
                                 pHY = pasDat.pos.y
                                 pWX = pasDat.pos.x
-
+                            assignedPassJidXmpp = None
                             busReply = Message(to=str(msg.sender))
                             busReply.body = "CEN"+":" + moveRejectedStr +":"+ passengerFoundStr  + ":"+ str(pHY) + ":" + str(pWX)+ ":" + passXmpp
+                            # if(busReply.body.__contains__("PASSENGER_FOUND")):
+                            #     print(Fore.RED+f"DEBUG CENTRAL REPLY TO BUS ({msg.sender}): "+Fore.RESET+busReply.body)
                             await self.send(busReply) #decided to await anyway # no need for await, clearly.
 
                             #DEPRECATED: bus arrMap overlap logic needs to be handled here:
+                            # print(Fore.RED + "DEBUG:" + Fore.RESET)
+                            # print(self.agent.busses.keys())
                             self.agent.arrMap[nH][nW] = newSymbol #reply with current map?
                             printArrMapWithBounds(self.agent.arrMap)
                         elif(body[1]=="FULL_BUS"):
@@ -209,7 +216,8 @@ class CentralAgent(Agent): #responsible for routing and graphing?
                     y=y-1
             if(self.arrMap[y][x]==' ' and (self.arrMap[y-1][x]=='=' or self.arrMap[y+1][x]=='=')):
                 positionNotFound = False
-                self.arrMap[y][x] = 'R' #Reserved for passenger.
+                if(ENABLE_PASSENGER_SPACE_RESERVATION):
+                    self.arrMap[y][x] = 'R' #Reserved for passenger.
         return dict({"x":x, "y": y})
 
     def assginBusToPassenger(self, hY:int, wX:int, timeLimit:int) -> Any:
@@ -229,6 +237,6 @@ class CentralAgent(Agent): #responsible for routing and graphing?
     def getCurrentAssignedPassenger(self, busJidXmpp) -> Any:
         for passengerJid in self.passengers:
             passenger:passengerData = self.passengers[passengerJid]
-            if(passenger.assignedBusXmpp == busJidXmpp):
+            if((passenger.assignedBusXmpp == busJidXmpp) and (not passenger.gotOnBus)):
                 return passengerJid
         return None

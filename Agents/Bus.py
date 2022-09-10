@@ -43,19 +43,21 @@ FINAL_STOP_STATE = "FINAL_STOP"
 
 
 class BusAgent(Agent):
-    route=[]
+    # route=[]
     # colorId=Fore.RED#change to be filled from fillDetails
-    currentPos = coordinates(0,0)
+    currentPos = None
     centralAgentAddress=""
-    passengerCount=0
-    passengersToPick = dict({})
-    timeOfStart=time.time()
+    passengerCount= None
+    passengersToPick = None
+    timeOfStart=None
     lastXPos = LAST_STOP
 
     async def setup(self):
         self.add_behaviour(TransitFiniteStates())
         print(Fore.LIGHTRED_EX + f"Bus Agent {self.get('id')} : STARTING     [jid: {str(self.jid)}]" + Fore.RESET)
         self.timeOfStart=time.time()
+        self.passengersToPick=dict({})
+        self.passengerCount = 0
         return 0
         
     def fillDetails(self, CentralAgentXMPPID: string, hY:int, wX:int):
@@ -95,6 +97,8 @@ class Moving_StateBehavior(State): #FIN
     async def run(self):
         # print(f"DEBUG: bus agent {str(self.agent.jid)} on the move.")
         try:
+            # print(Fore.RED+"DEBUG BUS "+str(self.agent.jid)+Fore.RESET)
+            # print(self.agent.passengersToPick.keys())
             stateChangeFromMoving:bool = False
             if self.agent.currentPos.x != self.agent.lastXPos:
                 # move by one index (width):
@@ -132,10 +136,13 @@ class Moving_StateBehavior(State): #FIN
 
                 #check if passengers are needed to be picked at the current stop. #change to pick only one passenger at a time to commit to a promised timelimit?
                 for key in self.agent.passengersToPick.keys():
-                    if(self.agent.passengersToPick[key].x == self.agent.currentPos.x):
-                        # print(Fore.RED+ "BUS DEBUG: !here! " + Fore.RESET)
-                        stateChangeFromMoving = True
-                        self.set_next_state(PICKING_UP_CLIENT_STATE)
+                    #CRAZY workaround to every bus having the same passenger keys somehow:
+                    if((self.agent.passengersToPick[key].y-1 == self.agent.currentPos.y) or (self.agent.passengersToPick[key].y+1 == self.agent.currentPos.y)):
+                        #(that's a bold strategy cotton, let's see if it pays off)
+                        if(self.agent.passengersToPick[key].x == self.agent.currentPos.x):
+                            # print(Fore.RED+ "BUS DEBUG: !here! " + Fore.RESET)
+                            stateChangeFromMoving = True
+                            self.set_next_state(PICKING_UP_CLIENT_STATE)
 
                 if(not stateChangeFromMoving):
                     self.set_next_state(MOVING_STATE) 
@@ -151,6 +158,8 @@ class PickingUpCient_StateBehavior(State):
     async def run(self):
         try:
             #Notify the passenger that: "YOU HAVE BEEN PICKED!" (no threats pls :P)
+            # print(self.agent.jid)
+            # print(self.agent.passengersToPick.keys())
             for passJID in self.agent.passengersToPick.keys():
                 currPassenger:coordinates = self.agent.passengersToPick[passJID]
                 if(currPassenger.x == self.agent.currentPos.x):

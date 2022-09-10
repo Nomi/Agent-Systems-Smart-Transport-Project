@@ -28,9 +28,11 @@ from helper import coordinates
 class passengerData:
     pos: coordinates
     assignedBusXmpp: Any
+    gotOnBus:bool
     def __init__(self, position: coordinates, assignedBusXmpp):
         self.assignedBusXmpp = assignedBusXmpp
         self.pos = position
+        self.gotOnBus = False
 
 class busData:
     pos: coordinates

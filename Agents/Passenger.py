@@ -42,32 +42,35 @@ FINISHED_STATE="FINISHED"
 
 ### Main class:
 class PassengerAgent(Agent):
-    destination=""
+    # destination=""
     # location=""
     centralAgentAddress=""
-    timeOfStart=time.time()
+    timeOfStart=None
     timelimit= int(ARRMAP_WIDTH/2) #1000000 #20 #4 #seconds
-    succesfullyCompleted=False
-    currentColor = ""
+    succesfullyCompleted=None
+    # currentColor = ""
     currentBusXmppJID = None
-    position = dict({
-        "x": -1,
-        "y": -1
-    })
+    position = None
 
     async def setup(self):
         self.add_behaviour(TransitFiniteStates())
         print(Fore.CYAN + f"Passenger Agent {self.get('id')} : STARTING     [jid: {str(self.jid)}]" + Fore.RESET)
         self.timeOfStart=time.time()
+        self.succesfullyCompleted=False
         return 0
         
-    def fillDetails(self, CentralAgentXMPPID: string, position:dict, destination:string):
+    def fillDetails(self, CentralAgentXMPPID: string, position:dict, destination:string, test:bool = False):
+        self.position = dict({
+        "x": -1,
+        "y": -1
+        })
         self.centralAgentAddress=CentralAgentXMPPID
         self.position=position
         self.destination=destination
         ## For testing:
-        # self.position["y"]=1
-        # self.position["x"]=4
+        if(test):
+            self.position["y"]=1
+            self.position["x"]=4
 
     def getCurrentColor(self):
         return self.currentColor
