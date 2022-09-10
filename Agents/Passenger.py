@@ -24,6 +24,7 @@ from time import sleep
 from colorama import Back,Fore,Style,init
 
 from Agents.Central import CentralAgent
+from config import ARRMAP_WIDTH
 from helper import coordinates
 # from Faker import faker()
 
@@ -45,7 +46,7 @@ class PassengerAgent(Agent):
     # location=""
     centralAgentAddress=""
     timeOfStart=time.time()
-    timelimit=1000000#20 #4 #seconds
+    timelimit= int(ARRMAP_WIDTH/2) #1000000 #20 #4 #seconds
     succesfullyCompleted=False
     currentColor = ""
     currentBusXmppJID = None

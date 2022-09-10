@@ -110,14 +110,14 @@ class CentralAgent(Agent): #responsible for routing and graphing?
                                 moveRejectedStr = "REJECT_MOVE"
                             currBus:busData = self.agent.busses[msg._sender]
                             
-                            if(self.agent.busses[msg._sender].busyPickingPassenger == False): #accept only one passenger at a time to honor timelimits (and make things easier for myself :'))
-                                assignedPassJidXmpp:passengerData = self.agent.getCurrentAssignedPassenger(msg.sender)
-                                if(assignedPassJidXmpp != None):
-                                    passengerFoundStr = "PASSENGER_FOUND"
-                                    passXmpp = str(assignedPassJidXmpp)
-                                    pasDat: passengerData = self.agent.passengers[assignedPassJidXmpp]
-                                    pHY = pasDat.pos.y
-                                    pWX = pasDat.pos.x
+                            # if(self.agent.busses[msg._sender].busyPickingPassenger == False): #accept only one passenger at a time to honor timelimits (and make things easier for myself :'))
+                            assignedPassJidXmpp:passengerData = self.agent.getCurrentAssignedPassenger(msg.sender)
+                            if(assignedPassJidXmpp != None):
+                                passengerFoundStr = "PASSENGER_FOUND"
+                                passXmpp = str(assignedPassJidXmpp)
+                                pasDat: passengerData = self.agent.passengers[assignedPassJidXmpp]
+                                pHY = pasDat.pos.y
+                                pWX = pasDat.pos.x
 
                             busReply = Message(to=str(msg.sender))
                             busReply.body = "CEN"+":" + moveRejectedStr +":"+ passengerFoundStr  + ":"+ str(pHY) + ":" + str(pWX)+ ":" + passXmpp

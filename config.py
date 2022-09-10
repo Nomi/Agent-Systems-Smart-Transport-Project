@@ -15,12 +15,12 @@ NUM_BUSSES_TO_GENERATE = 4
 
 
 ''' Central.py '''
-ARRMAP_HEIGHT = 7 #19 #try to have this be odd
-ARRMAP_WIDTH = 50 #5 #30 #100
+ARRMAP_HEIGHT = 16 #4 #7 #19 #try to have this be odd (or even?)
+ARRMAP_WIDTH = 50 #5 #10 #30 #100
 
 
 ''' Bus.py '''
-MAX_PASSENGERS = 2
+MAX_PASSENGERS = 1
 LAST_STOP = ARRMAP_WIDTH -1
 SYMBOL_FULLBUSS = ">"
 SYMBOL_NOTFULLBUSS = "+"
