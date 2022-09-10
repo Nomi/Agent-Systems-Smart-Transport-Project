@@ -30,15 +30,16 @@ from helper import coordinates
 
 
 ### Global Variables
+# States:
+LOOKING_FOR_RIDE_STATE = "LOOKING_FOR_RIDE"
+WAITING_FOR_RIDE_STATE = "WAITING_FOR_RIDE"
+RIDING_STATE = "RIDING"
+GETTING_OFF_STATE= "GETTING_OFF"
+FINISHED_STATE="FINISHED"
 
-## States:
-LOOKING_FOR_RIDE = "LOOKING_FOR_RIDE" #yellow node
-WAITING_FOR_RIDE = "WAITING_FOR_RIDE" #blue node
-RIDING = "RIDING"
-GETTING_OFF= "GETTING_OFF"
-FINISHED="FINISHED"
 
 
+### Main class:
 class PassengerAgent(Agent):
     destination=""
     # location=""
@@ -51,7 +52,7 @@ class PassengerAgent(Agent):
     position = dict({
         "x": -1,
         "y": -1
-    }) # or rather just starting location?
+    })
 
     async def setup(self):
         self.add_behaviour(TransitFiniteStates())
@@ -64,8 +65,8 @@ class PassengerAgent(Agent):
         self.position=position
         self.destination=destination
         ## For testing:
-        self.position["y"]=1
-        self.position["x"]=4
+        # self.position["y"]=1
+        # self.position["x"]=4
 
     def getCurrentColor(self):
         return self.currentColor
@@ -78,26 +79,25 @@ class RequestBus(OneShotBehaviour):
         msg = Message(to=str(self.agent.centralAgentAddress))
         msg.body="P:"+"LOOKING_FOR_BUS"+":"+str(self.agent.timelimit)+":"+str(self.agent.position["y"])+":"+str(self.agent.position["x"])
         await self.send(msg)
-        #SEND MESSAGE TO ORGANIZER LOOKING FOR BUS
 
 
 class TransitFiniteStates(FSMBehaviour):
     async def on_start(self):
-        self.add_state(name=LOOKING_FOR_RIDE, state=LookForBus_StateBehavior(), initial=True)
-        self.add_state(name=WAITING_FOR_RIDE, state=WaitingForBus_StateBehavior())
-        self.add_state(name=RIDING, state=RidingBus_StateBehavior())
+        self.add_state(name=LOOKING_FOR_RIDE_STATE, state=LookForBus_StateBehavior(), initial=True)
+        self.add_state(name=WAITING_FOR_RIDE_STATE, state=WaitingForBus_StateBehavior())
+        self.add_state(name=RIDING_STATE, state=RidingBus_StateBehavior())
         # self.add_state(name=GETTING_OFF, state=GettingOff_StateBehavior())
-        self.add_state(name=FINISHED, state=Finished_StateBehavior())
-        self.add_transition(source=LOOKING_FOR_RIDE, dest=LOOKING_FOR_RIDE)#
-        self.add_transition(source=LOOKING_FOR_RIDE, dest=WAITING_FOR_RIDE)#
-        self.add_transition(source=WAITING_FOR_RIDE, dest=WAITING_FOR_RIDE)
-        self.add_transition(source=WAITING_FOR_RIDE, dest=RIDING)
-        self.add_transition(source=RIDING, dest=RIDING)
+        self.add_state(name=FINISHED_STATE, state=Finished_StateBehavior())
+        self.add_transition(source=LOOKING_FOR_RIDE_STATE, dest=LOOKING_FOR_RIDE_STATE)#
+        self.add_transition(source=LOOKING_FOR_RIDE_STATE, dest=WAITING_FOR_RIDE_STATE)#
+        self.add_transition(source=WAITING_FOR_RIDE_STATE, dest=WAITING_FOR_RIDE_STATE)
+        self.add_transition(source=WAITING_FOR_RIDE_STATE, dest=RIDING_STATE)
+        self.add_transition(source=RIDING_STATE, dest=RIDING_STATE)
         # self.add_transition(source=RIDING, dest=GETTING_OFF)
         # self.add_transition(source=GETTING_OFF, dest=FINISHED)
-        self.add_transition(source=RIDING, dest=FINISHED)
+        self.add_transition(source=RIDING_STATE, dest=FINISHED_STATE)
         # self.add_transition(source=FINISHED, dest=FINISHED)
-        self.add_transition(source=LOOKING_FOR_RIDE, dest=FINISHED)#
+        self.add_transition(source=LOOKING_FOR_RIDE_STATE, dest=FINISHED_STATE)#
         # self.add_transition(source=WAITING_FOR_RIDE, dest=FINISHED)#
 
 class LookForBus_StateBehavior(State): #FIN
@@ -106,29 +106,28 @@ class LookForBus_StateBehavior(State): #FIN
         
     async def run(self):
         notFoundBus = True
-        # self.agent.succesfullyCompleted=True #was just here for debug.
-        print("DEBUG: looking for bus.")
+        # print("DEBUG: looking for bus.")
         try:
             msg = await self.receive(timeout=self.agent.timelimit)
             if msg:
                 if(msg.body=="--[ACCEPT]--"):
-                    print("debug passenger: ride found")
+                    # print("debug passenger: ride found")
                     notFoundBus=False
-                    self.set_next_state(WAITING_FOR_RIDE)
+                    self.set_next_state(WAITING_FOR_RIDE_STATE)
                 elif(msg.body=="--[REJECT]--"):
-                    self.set_next_state(FINISHED)
+                    self.set_next_state(FINISHED_STATE)
                 else:
                     print("Passenger looking for bus stage: invalid reply gotten.")
             else:
                 searchTimeSoFar = int(time.time() - self.agent.timeOfStart)
-                print(searchTimeSoFar)
+                # print(searchTimeSoFar)
                 if(notFoundBus):
                     #the following if statement should be unneeded because of the timeout?
                     if(searchTimeSoFar >= self.agent.timelimit):
                         #NOTIFY CENTRAL AGENT TO CANCEL??
-                        self.set_next_state(FINISHED)
+                        self.set_next_state(FINISHED_STATE)
                     else:
-                        self.set_next_state(LOOKING_FOR_RIDE)
+                        self.set_next_state(LOOKING_FOR_RIDE_STATE)
                         await asyncio.sleep(2)
                     
         except:
@@ -147,7 +146,7 @@ class WaitingForBus_StateBehavior(State):
                     notifyCenMsg.body="P:"+"GOT_ON_BUS"
                     changedState = True
                     await self.send(notifyCenMsg)
-                    self.set_next_state(RIDING)
+                    self.set_next_state(RIDING_STATE)
 
             # searchTimeSoFar = int(time.time() - self.agent.timeOfStart)
             # if(searchTimeSoFar >= self.agent.timelimit):
@@ -156,7 +155,7 @@ class WaitingForBus_StateBehavior(State):
             #     self.set_next_state(FINISHED)
 
             if not changedState:
-                self.set_next_state(WAITING_FOR_RIDE)
+                self.set_next_state(WAITING_FOR_RIDE_STATE)
                 await asyncio.sleep(2)
         except:
             traceback.print_exc()
@@ -168,10 +167,10 @@ class RidingBus_StateBehavior(State):
             if msg:
                 if(msg.body=="--[REACHED_DESTINATION]--"):
                     # self.set_next_state(GETTING_OFF)
-                    print("DEBUG passenger: Recieved \"--[REACHED_DESTINATION]--\"")
-                    self.set_next_state(FINISHED)
+                    # print("DEBUG passenger: Recieved \"--[REACHED_DESTINATION]--\"")
+                    self.set_next_state(FINISHED_STATE)
                     return
-            self.set_next_state(RIDING)
+            self.set_next_state(RIDING_STATE)
             # await asyncio.sleep(2)
         except:
             traceback.print_exc()
@@ -199,7 +198,7 @@ class Finished_StateBehavior(State):
                 await self.send(msg)
             else:
                 print(Fore.CYAN + f"Passenger Agent {self.get('id')} : FAILED TO TRAVEL     [jid: {str(self.agent.jid)}]" + Fore.RESET)
-                # don't need the following anymore because central agent takes care of timelimits.
+                ## don't need the following anymore because central agent takes care of timelimits.
                 # msg = Message(to=self.agent.centralAgentAddress)
                 # msg.body='P:'+'--[CANCEL]--'
         except:

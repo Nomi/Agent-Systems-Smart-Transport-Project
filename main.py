@@ -53,7 +53,7 @@ if __name__ == "__main__":
     ###### !!!!!OTHER SUBSECTIONS HERE!!!!! ######
     centralAg = CentralAgent(f"{JID_BASE}/10","lololol",False)
     centralAg.set("id",0)
-    centralAg.fillDetails([],[])
+    # centralAg.fillDetails([],[])
     centralFuture = centralAg.start()
     centralFuture.result()
     
