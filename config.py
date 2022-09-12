@@ -10,8 +10,8 @@ JID_PASSWORD = "lololol"
 
 
 ''' main.py '''
-NUM_PASSENGERS_TO_GENERATE:int = 6 #10 #40 is the upper limit
-NUM_BUSSES_TO_GENERATE:int = 4     #40 is the upper limit
+NUM_PASSENGERS_TO_GENERATE:int = 6 #999 is the theoretical upper limit
+NUM_BUSSES_TO_GENERATE:int = 4     #999 is the theoretical upper limit
 #code here (num passengers, num busses, etc.)
 
 
