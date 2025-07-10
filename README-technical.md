@@ -337,4 +337,6 @@ pip install spade colorama numpy
 
 *For a non-technical overview, see [README.md](README.md)*
 
-*For a non-technical overview, see [README.md](README.md)*
+---
+
+**Disclaimer:** This documentation was generated with AI assistance.

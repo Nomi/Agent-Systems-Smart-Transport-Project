@@ -129,3 +129,7 @@ The simulation continues until all passengers have been served or have given up,
 **Author:** Noman Noor
 
 *For technical implementation details, see [README-technical.md](README-technical.md)*
+
+---
+
+**Disclaimer:** This documentation was generated with AI assistance.
